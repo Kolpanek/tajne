@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANTARES — Správa personálu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg2: #111419;
+    --bg3: #181c22;
+    --panel: #1a1f28;
+    --border: rgba(0,200,180,0.15);
+    --border2: rgba(0,200,180,0.3);
+    --accent: #00c8b4;
+    --accent2: #00a896;
+    --accent-dim: rgba(0,200,180,0.08);
+    --accent-glow: rgba(0,200,180,0.12);
+    --red: #e05c5c;
+    --amber: #e8a63a;
+    --green: #4ecf7a;
+    --text: #d8dde8;
+    --text2: #8b929f;
+    --text3: #5a606d;
+    --danger: #e05c5c;
+    --r: 4px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanlines overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border2);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-badge {
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: var(--accent-dim);
+  }
+
+  .logo-badge::after {
+    content: '★';
+    font-size: 16px;
+    color: var(--accent);
+  }
+
+  .logo-text {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 4px;
+    color: var(--accent);
+  }
+
+  .logo-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 1px;
+  }
+
+  .header-right {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 1px;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ── LAYOUT ── */
+  .app {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* ── SIDEBAR ── */
+  aside {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .sidebar-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+    padding: 0.5rem 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .nav-btn {
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--r);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    border: 1px solid transparent;
+    text-transform: uppercase;
+  }
+
+  .nav-btn:hover {
+    background: var(--accent-dim);
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  .nav-btn.active {
+    background: var(--accent-glow);
+    color: var(--accent);
+    border-color: var(--border2);
+  }
+
+  .nav-btn .icon {
+    font-size: 16px;
+    width: 18px;
+    text-align: center;
+  }
+
+  .search-wrap {
+    padding: 0 0 0.5rem;
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--r);
+    outline: none;
+    letter-spacing: 1px;
+  }
+
+  .search-input:focus { border-color: var(--accent2); }
+  .search-input::placeholder { color: var(--text3); }
+
+  /* Employee list in sidebar */
+  .emp-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .emp-list::-webkit-scrollbar { width: 4px; }
+  .emp-list::-webkit-scrollbar-track { background: transparent; }
+  .emp-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .emp-list-item {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--text2);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--r);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .emp-list-item:hover { background: var(--accent-dim); color: var(--text); border-color: var(--border); }
+  .emp-list-item.active { background: var(--accent-glow); color: var(--accent); border-color: var(--border2); }
+
+  .emp-list-name {
+    font-weight: 500;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .emp-list-pts {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 1px 6px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .rank-badge-sm {
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  /* ── MAIN ── */
+  main {
+    padding: 2rem;
+    overflow-y: auto;
+    background: var(--bg);
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── PAGE HEADERS ── */
+  .page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .page-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .page-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    margin-top: 3px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    background: none;
+    border: 1px solid var(--border2);
+    color: var(--accent);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--r);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .btn:hover { background: var(--accent-glow); border-color: var(--accent); }
+
+  .btn-danger {
+    border-color: rgba(224,92,92,0.3);
+    color: var(--red);
+  }
+  .btn-danger:hover { background: rgba(224,92,92,0.1); border-color: var(--red); }
+
+  .btn-sm {
+    padding: 0.3rem 0.75rem;
+    font-size: 12px;
+  }
+
+  /* ── CARDS & PANELS ── */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 1.5rem;
+  }
+
+  .panel-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text2);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── STAT CARDS ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    opacity: 0.5;
+  }
+
+  .stat-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-value {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  /* ── FORMS ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+  }
+
+  input, select, textarea {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--r);
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent2);
+  }
+
+  input::placeholder, textarea::placeholder { color: var(--text3); }
+
+  select option { background: var(--bg3); }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+  }
+
+  /* ── EMPLOYEE DETAIL ── */
+  .emp-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .emp-detail-header::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+  }
+
+  .emp-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--r);
+    background: var(--accent-dim);
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+    letter-spacing: 1px;
+  }
+
+  .emp-detail-info { flex: 1; }
+
+  .emp-detail-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+
+  .emp-detail-meta {
+    display: flex;
+    gap: 1rem;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
+
+  .meta-chip {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    background: var(--bg3);
+  }
+
+  .rank-chip {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  .pts-display {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .pts-num {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .pts-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+  }
+
+  /* ── POINTS ── */
+  .points-controls {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .pts-input-wrap {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .pts-input-wrap input {
+    width: 80px;
+    flex-shrink: 0;
+    font-family: 'Share Tech Mono', monospace;
+    text-align: center;
+  }
+
+  .pts-input-wrap input[type="text"] {
+    flex: 1;
+    width: auto;
+    text-align: left;
+  }
+
+  .plus-btn {
+    background: rgba(78,207,122,0.08);
+    border: 1px solid rgba(78,207,122,0.3);
+    color: var(--green);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 0.5rem 1rem;
+    border-radius: var(--r);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .plus-btn:hover { background: rgba(78,207,122,0.16); }
+
+  .minus-btn {
+    background: rgba(224,92,92,0.08);
+    border: 1px solid rgba(224,92,92,0.3);
+    color: var(--red);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 0.5rem 1rem;
+    border-radius: var(--r);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .minus-btn:hover { background: rgba(224,92,92,0.16); }
+
+  /* ── ACTIVITY LOG ── */
+  .activity-log {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .activity-log::-webkit-scrollbar { width: 4px; }
+  .activity-log::-webkit-scrollbar-track { background: transparent; }
+  .activity-log::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .log-entry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg2);
+    border-radius: var(--r);
+    border: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  .log-pts {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 48px;
+    text-align: center;
+    padding: 2px 6px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .log-pts.pos { color: var(--green); background: rgba(78,207,122,0.08); border: 1px solid rgba(78,207,122,0.2); }
+  .log-pts.neg { color: var(--red); background: rgba(224,92,92,0.08); border: 1px solid rgba(224,92,92,0.2); }
+
+  .log-reason { flex: 1; color: var(--text); }
+
+  .log-date {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    white-space: nowrap;
+  }
+
+  /* ── DETAIL GRID ── */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  /* ── TABLE ── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .data-table th {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+    padding: 0.5rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .data-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+  }
+
+  .data-table tr:last-child td { border-bottom: none; }
+
+  .data-table tr:hover td { background: var(--accent-dim); }
+
+  .table-name {
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .table-name:hover { color: var(--accent); }
+
+  /* ── RANK COLORS ── */
+  .rank-generál { color: #ffd700; border-color: #ffd700; background: rgba(255,215,0,0.08); }
+  .rank-plukovník { color: #c0a0e0; border-color: #c0a0e0; background: rgba(192,160,224,0.08); }
+  .rank-major { color: #60a0e0; border-color: #60a0e0; background: rgba(96,160,224,0.08); }
+  .rank-kapitán { color: #40b080; border-color: #40b080; background: rgba(64,176,128,0.08); }
+  .rank-poručík { color: #80c080; border-color: #80c080; background: rgba(128,192,128,0.08); }
+  .rank-desátník { color: #b0b8c0; border-color: #b0b8c0; background: rgba(176,184,192,0.08); }
+  .rank-vojín { color: #78828c; border-color: #78828c; background: rgba(120,130,140,0.08); }
+  .rank-custom { color: var(--accent); border-color: var(--border2); background: var(--accent-dim); }
+
+  /* ── MODAL ── */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--r);
+    padding: 2rem;
+    width: 540px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    justify-content: flex-end;
+  }
+
+  /* ── NOTES ── */
+  .notes-area {
+    width: 100%;
+    min-height: 140px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 0.75rem;
+    resize: vertical;
+    line-height: 1.6;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .notes-area:focus { border-color: var(--accent2); }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text3);
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 1px;
+    font-size: 12px;
+  }
+
+  /* ── NOTIFICATIONS ── */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--r);
+    z-index: 2000;
+    animation: fadeInOut 2.5s ease forwards;
+    pointer-events: none;
+  }
+
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(10px); }
+    15% { opacity: 1; transform: translateY(0); }
+    75% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text2);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 0.6rem 1.25rem;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -1px;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 800px) {
+    .app { grid-template-columns: 1fr; }
+    aside { display: none; }
+    .form-grid { grid-template-columns: 1fr; }
+    .detail-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-badge"></div>
+    <div>
+      <div class="logo-text">ANTARES</div>
+      <div class="logo-sub">Systém správy personálu</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="status-dot"></span>
+    SYSTÉM AKTIVNÍ &nbsp;|&nbsp; <span id="clock"></span>
+  </div>
+</header>
+
+<div class="app">
+  <aside>
+    <div class="sidebar-label">Navigace</div>
+    <button class="nav-btn active" onclick="showPage('overview')" id="nav-overview">
+      <span class="icon">◈</span> Přehled
+    </button>
+    <button class="nav-btn" onclick="showPage('employees')" id="nav-employees">
+      <span class="icon">◉</span> Zaměstnanci
+    </button>
+    <button class="nav-btn" onclick="showPage('leaderboard')" id="nav-leaderboard">
+      <span class="icon">◆</span> Žebříček
+    </button>
+
+    <div class="sidebar-label" style="margin-top:1rem">Zaměstnanci</div>
+    <div class="search-wrap">
+      <input class="search-input" id="sidebar-search" type="text" placeholder="Hledat..." oninput="filterSidebar(this.value)">
+    </div>
+    <div class="emp-list" id="sidebar-emp-list"></div>
+
+    <div style="margin-top:auto; padding-top:1rem;">
+      <button class="btn" style="width:100%" onclick="openAddModal()">+ Přidat zaměstnance</button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- ── OVERVIEW ── -->
+    <div class="page active" id="page-overview">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Přehled</div>
+          <div class="page-sub">Souhrn stavu personálu projektu ANTARES</div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Celkem zaměstnanců</div>
+          <div class="stat-value" id="stat-total">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Aktivní</div>
+          <div class="stat-value" id="stat-active">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Celkem bodů</div>
+          <div class="stat-value" id="stat-pts">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Prům. bodů / os.</div>
+          <div class="stat-value" id="stat-avg">0</div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:1rem">
+        <div class="panel-title">Poslední záznamy aktivity</div>
+        <div id="overview-log" class="activity-log">
+          <div class="empty">Žádné záznamy</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Top 5 zaměstnanců</div>
+        <div id="overview-top"></div>
+      </div>
+    </div>
+
+    <!-- ── EMPLOYEES LIST ── -->
+    <div class="page" id="page-employees">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Zaměstnanci</div>
+          <div class="page-sub">Evidence personálu</div>
+        </div>
+        <button class="btn" onclick="openAddModal()">+ Nový zaměstnanec</button>
+      </div>
+
+      <div class="panel">
+        <table class="data-table" id="emp-table">
+          <thead>
+            <tr>
+              <th>Jméno a příjmení</th>
+              <th>Hodnost</th>
+              <th>Pozice</th>
+              <th>Body</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="emp-tbody">
+            <tr><td colspan="6" style="text-align:center; color:var(--text3); padding:2rem; font-family:Share Tech Mono,monospace; font-size:12px">Žádní zaměstnanci</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── EMPLOYEE DETAIL ── -->
+    <div class="page" id="page-detail">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Detail zaměstnance</div>
+          <div class="page-sub" id="detail-breadcrumb">—</div>
+        </div>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-sm" onclick="openEditModal()">Upravit</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmDelete()">Smazat</button>
+          <button class="btn btn-sm" onclick="showPage('employees')">← Zpět</button>
+        </div>
+      </div>
+
+      <div class="emp-detail-header" id="emp-detail-header"></div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('tab-points')">Body & Aktivita</button>
+        <button class="tab-btn" onclick="switchTab('tab-info')">Informace</button>
+        <button class="tab-btn" onclick="switchTab('tab-notes')">Poznámky</button>
+      </div>
+
+      <div class="tab-pane active" id="tab-points">
+        <div class="panel" style="margin-bottom:1rem">
+          <div class="panel-title">Přidělit / odebrat body</div>
+          <div class="points-controls">
+            <div class="pts-input-wrap">
+              <input type="number" id="pts-amount" value="1" min="1" max="9999" placeholder="Počet bodů">
+              <input type="text" id="pts-reason" placeholder="Důvod (volitelné)">
+            </div>
+            <button class="plus-btn" onclick="addPoints(1)">+ Přidat</button>
+            <button class="minus-btn" onclick="addPoints(-1)">− Odebrat</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Historie aktivity</div>
+          <div class="activity-log" id="detail-log">
+            <div class="empty">Žádné záznamy</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane" id="tab-info">
+        <div class="detail-grid">
+          <div class="panel"><div class="panel-title">Osobní údaje</div><div id="info-personal"></div></div>
+          <div class="panel"><div class="panel-title">Služební údaje</div><div id="info-service"></div></div>
+        </div>
+      </div>
+
+      <div class="tab-pane" id="tab-notes">
+        <div class="panel">
+          <div class="panel-title">Interní poznámky</div>
+          <textarea class="notes-area" id="notes-area" placeholder="Interní poznámky k zaměstnanci..." oninput="saveNotes()"></textarea>
+          <div style="font-family:Share Tech Mono,monospace;font-size:10px;color:var(--text3);margin-top:0.5rem;letter-spacing:1px">Poznámky se ukládají automaticky.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LEADERBOARD ── -->
+    <div class="page" id="page-leaderboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Žebříček</div>
+          <div class="page-sub">Seřazeno dle bodů</div>
+        </div>
+      </div>
+      <div class="panel">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:50px">Pořadí</th>
+              <th>Jméno</th>
+              <th>Hodnost</th>
+              <th>Pozice</th>
+              <th>Body</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── ADD/EDIT MODAL ── -->
+<div class="modal-backdrop" id="emp-modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title" id="modal-title">Nový zaměstnanec</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Jméno *</label>
+        <input type="text" id="f-fname" placeholder="Jméno">
+      </div>
+      <div class="form-group">
+        <label>Příjmení *</label>
+        <input type="text" id="f-lname" placeholder="Příjmení">
+      </div>
+      <div class="form-group">
+        <label>Hodnost</label>
+        <select id="f-rank">
+          <option value="">— bez hodnosti —</option>
+          <option value="Generál">Generál</option>
+          <option value="Plukovník">Plukovník</option>
+          <option value="Major">Major</option>
+          <option value="Kapitán">Kapitán</option>
+          <option value="Poručík">Poručík</option>
+          <option value="Desátník">Desátník</option>
+          <option value="Vojín">Vojín</option>
+          <option value="custom">Vlastní...</option>
+        </select>
+      </div>
+      <div class="form-group" id="f-rank-custom-wrap" style="display:none">
+        <label>Vlastní hodnost</label>
+        <input type="text" id="f-rank-custom" placeholder="Zadej hodnost">
+      </div>
+      <div class="form-group">
+        <label>Pozice / Funkce</label>
+        <input type="text" id="f-position" placeholder="např. Výzkumný technik">
+      </div>
+      <div class="form-group">
+        <label>Oddělení</label>
+        <input type="text" id="f-dept" placeholder="např. R&D, Bezpečnost...">
+      </div>
+      <div class="form-group">
+        <label>Herní jméno / Tag</label>
+        <input type="text" id="f-tag" placeholder="Nick ve hře">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="f-status">
+          <option value="Aktivní">Aktivní</option>
+          <option value="Neaktivní">Neaktivní</option>
+          <option value="Dovolená">Dovolená</option>
+          <option value="Suspendován">Suspendován</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Datum nástupu</label>
+        <input type="date" id="f-date">
+      </div>
+      <div class="form-group">
+        <label>Kontakt / Discord</label>
+        <input type="text" id="f-contact" placeholder="Discord tag nebo jiný">
+      </div>
+      <div class="form-group full">
+        <label>Poznámka k záznamu</label>
+        <textarea id="f-bio" placeholder="Krátký popis, specializace, oprávnění..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger btn-sm" onclick="closeEmpModal()">Zrušit</button>
+      <button class="btn btn-sm" onclick="saveEmployee()">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+let employees = JSON.parse(localStorage.getItem('antares_employees') || '[]');
+let globalLog = JSON.parse(localStorage.getItem('antares_log') || '[]');
+let currentEmpId = null;
+let editingId = null;
+
+function save() {
+  localStorage.setItem('antares_employees', JSON.stringify(employees));
+  localStorage.setItem('antares_log', JSON.stringify(globalLog));
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function getEmp(id) { return employees.find(e => e.id === id); }
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('cs-CZ');
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('cs-CZ') + ' ' + d.toLocaleTimeString('cs-CZ', {hour:'2-digit',minute:'2-digit'});
+}
+
+function initials(emp) {
+  return ((emp.fname||'')[0]||'') + ((emp.lname||'')[0]||'');
+}
+
+// ── CLOCK ──
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('cs-CZ', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── RANK ──
+const RANKS = ['Generál','Plukovník','Major','Kapitán','Poručík','Desátník','Vojín'];
+
+function rankKey(r) {
+  if (!r) return 'vojín';
+  const k = r.toLowerCase().replace(/[^a-záčďéěíňóřšťúůýž]/g,'');
+  return RANKS.map(x=>x.toLowerCase().replace(/[^a-záčďéěíňóřšťúůýž]/g,'')).includes(k) ? k : 'custom';
+}
+
+function rankBadge(rank, cls='') {
+  if (!rank) return '<span style="color:var(--text3);font-size:12px">—</span>';
+  const k = rankKey(rank);
+  return `<span class="rank-chip rank-${k} ${cls}" style="font-size:11px;padding:2px 8px;border-radius:2px;border:1px solid;">${rank}</span>`;
+}
+
+function statusColor(s) {
+  if (s === 'Aktivní') return 'var(--green)';
+  if (s === 'Suspendován') return 'var(--red)';
+  if (s === 'Dovolená') return 'var(--amber)';
+  return 'var(--text3)';
+}
+
+// ── NAVIGATION ──
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  const nb = document.getElementById('nav-'+page);
+  if (nb) nb.classList.add('active');
+
+  if (page === 'overview') renderOverview();
+  if (page === 'employees') renderTable();
+  if (page === 'leaderboard') renderLeaderboard();
+}
+
+function showDetail(id) {
+  currentEmpId = id;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-detail').classList.add('active');
+  document.getElementById('nav-employees').classList.add('active');
+
+  // reset tabs
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{b.classList.toggle('active',i===0);});
+  document.querySelectorAll('.tab-pane').forEach((p,i)=>{p.classList.toggle('active',i===0);});
+
+  renderDetail();
+  updateSidebarActive(id);
+}
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('onclick').includes(tabId));
+  });
+  document.querySelectorAll('.tab-pane').forEach(p => {
+    p.classList.toggle('active', p.id === tabId);
+  });
+}
+
+// ── SIDEBAR ──
+function renderSidebar(filter='') {
+  const list = document.getElementById('sidebar-emp-list');
+  const filtered = employees.filter(e =>
+    (e.fname+' '+e.lname).toLowerCase().includes(filter.toLowerCase()) ||
+    (e.tag||'').toLowerCase().includes(filter.toLowerCase())
+  ).sort((a,b)=> (b.points||0)-(a.points||0));
+
+  if (!filtered.length) {
+    list.innerHTML = '<div style="padding:0.5rem 0.75rem;font-size:12px;color:var(--text3);font-family:Share Tech Mono,monospace">Nic nenalezeno</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(e => `
+    <button class="emp-list-item ${e.id === currentEmpId ? 'active' : ''}" onclick="showDetail('${e.id}')">
+      <span class="emp-list-name">${e.fname} ${e.lname}</span>
+      <span class="emp-list-pts">${e.points||0}</span>
+    </button>
+  `).join('');
+}
+
+function filterSidebar(v) { renderSidebar(v); }
+
+function updateSidebarActive(id) {
+  document.querySelectorAll('.emp-list-item').forEach(el => {
+    el.classList.toggle('active', el.getAttribute('onclick').includes(id));
+  });
+}
+
+// ── OVERVIEW ──
+function renderOverview() {
+  const active = employees.filter(e => e.status === 'Aktivní').length;
+  const totalPts = employees.reduce((s,e)=>s+(e.points||0),0);
+  document.getElementById('stat-total').textContent = employees.length;
+  document.getElementById('stat-active').textContent = active;
+  document.getElementById('stat-pts').textContent = totalPts;
+  document.getElementById('stat-avg').textContent = employees.length ? Math.round(totalPts/employees.length) : 0;
+
+  // Recent log
+  const ol = document.getElementById('overview-log');
+  const recent = [...globalLog].sort((a,b)=>b.ts-a.ts).slice(0,15);
+  if (!recent.length) { ol.innerHTML = '<div class="empty">Žádné záznamy</div>'; }
+  else {
+    ol.innerHTML = recent.map(entry => {
+      const emp = getEmp(entry.empId);
+      const name = emp ? emp.fname+' '+emp.lname : 'Smazaný zaměstnanec';
+      return logEntryHTML(entry, name);
+    }).join('');
+  }
+
+  // Top 5
+  const top = [...employees].sort((a,b)=>(b.points||0)-(a.points||0)).slice(0,5);
+  const tt = document.getElementById('overview-top');
+  if (!top.length) { tt.innerHTML = '<div class="empty">Žádní zaměstnanci</div>'; return; }
+  tt.innerHTML = `<table class="data-table"><thead><tr><th>#</th><th>Jméno</th><th>Hodnost</th><th>Body</th></tr></thead><tbody>
+    ${top.map((e,i)=>`<tr>
+      <td style="font-family:Share Tech Mono,monospace;color:var(--text3)">${i+1}</td>
+      <td class="table-name" onclick="showDetail('${e.id}')">${e.fname} ${e.lname}</td>
+      <td>${rankBadge(e.rank)}</td>
+      <td style="font-family:Rajdhani,sans-serif;font-size:18px;font-weight:700;color:var(--accent)">${e.points||0}</td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+
+// ── TABLE ──
+function renderTable() {
+  const tbody = document.getElementById('emp-tbody');
+  if (!employees.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:2rem;font-family:Share Tech Mono,monospace;font-size:12px">Žádní zaměstnanci — přidejte prvního</td></tr>';
+    return;
+  }
+  tbody.innerHTML = [...employees].sort((a,b)=>(a.lname||'').localeCompare(b.lname||'','cs')).map(e => `
+    <tr>
+      <td class="table-name" onclick="showDetail('${e.id}')">${e.fname} ${e.lname}${e.tag ? ` <span style="color:var(--text3);font-size:11px">(${e.tag})</span>` : ''}</td>
+      <td>${rankBadge(e.rank)}</td>
+      <td style="color:var(--text2)">${e.position||'—'}</td>
+      <td style="font-family:Rajdhani,sans-serif;font-size:18px;font-weight:700;color:var(--accent)">${e.points||0}</td>
+      <td><span style="font-size:12px;color:${statusColor(e.status)}">${e.status||'—'}</span></td>
+      <td><button class="btn btn-sm" onclick="showDetail('${e.id}')">Detail</button></td>
+    </tr>
+  `).join('');
+}
+
+// ── LEADERBOARD ──
+function renderLeaderboard() {
+  const tbody = document.getElementById('leaderboard-tbody');
+  if (!employees.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:2rem;font-family:Share Tech Mono,monospace;font-size:12px">Žádní zaměstnanci</td></tr>';
+    return;
+  }
+  const sorted = [...employees].sort((a,b)=>(b.points||0)-(a.points||0));
+  const medals = ['🥇','🥈','🥉'];
+  tbody.innerHTML = sorted.map((e,i) => `
+    <tr>
+      <td style="font-family:Rajdhani,sans-serif;font-size:18px;font-weight:700;color:${i<3?'var(--accent)':'var(--text3)'}">
+        ${i<3 ? medals[i] : i+1}
+      </td>
+      <td class="table-name" onclick="showDetail('${e.id}')">${e.fname} ${e.lname}</td>
+      <td>${rankBadge(e.rank)}</td>
+      <td style="color:var(--text2)">${e.position||'—'}</td>
+      <td style="font-family:Rajdhani,sans-serif;font-size:20px;font-weight:700;color:var(--accent)">${e.points||0}</td>
+    </tr>
+  `).join('');
+}
+
+// ── DETAIL ──
+function renderDetail() {
+  const emp = getEmp(currentEmpId);
+  if (!emp) { showPage('employees'); return; }
+
+  document.getElementById('detail-breadcrumb').textContent = emp.fname + ' ' + emp.lname;
+
+  // Header
+  document.getElementById('emp-detail-header').innerHTML = `
+    <div class="emp-avatar">${initials(emp)}</div>
+    <div class="emp-detail-info">
+      <div class="emp-detail-name">${emp.fname} ${emp.lname}</div>
+      <div class="emp-detail-meta">
+        ${rankBadge(emp.rank)}
+        ${emp.position ? `<span class="meta-chip">${emp.position}</span>` : ''}
+        ${emp.dept ? `<span class="meta-chip">${emp.dept}</span>` : ''}
+        ${emp.status ? `<span class="meta-chip" style="color:${statusColor(emp.status)};border-color:${statusColor(emp.status)}">${emp.status}</span>` : ''}
+        ${emp.tag ? `<span class="meta-chip" style="color:var(--text3)">${emp.tag}</span>` : ''}
+      </div>
+    </div>
+    <div class="pts-display">
+      <div class="pts-num">${emp.points||0}</div>
+      <div class="pts-label">Bodů</div>
+    </div>
+  `;
+
+  // Log
+  renderDetailLog(emp);
+
+  // Info
+  document.getElementById('info-personal').innerHTML = infoRow('Jméno', emp.fname+' '+emp.lname) +
+    infoRow('Herní tag', emp.tag) + infoRow('Kontakt', emp.contact) + infoRow('Datum nástupu', fmtDate(emp.date));
+  document.getElementById('info-service').innerHTML = infoRow('Hodnost', emp.rank) +
+    infoRow('Pozice', emp.position) + infoRow('Oddělení', emp.dept) +
+    infoRow('Status', emp.status) + infoRow('Body celkem', emp.points||0);
+
+  // Notes
+  document.getElementById('notes-area').value = emp.notes || '';
+
+  // Sidebar bio
+  renderSidebar(document.getElementById('sidebar-search').value);
+  updateSidebarActive(currentEmpId);
+}
+
+function infoRow(label, val) {
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+    <span style="font-family:Share Tech Mono,monospace;font-size:10px;letter-spacing:1px;color:var(--text3)">${label}</span>
+    <span style="color:var(--text);font-size:13px">${val||'—'}</span>
+  </div>`;
+}
+
+function renderDetailLog(emp) {
+  const log = document.getElementById('detail-log');
+  const entries = (emp.log||[]).slice().reverse();
+  if (!entries.length) { log.innerHTML = '<div class="empty">Žádné záznamy aktivity</div>'; return; }
+  log.innerHTML = entries.map(e => logEntryHTML(e)).join('');
+}
+
+function logEntryHTML(entry, nameOverride) {
+  const pos = entry.pts > 0;
+  const name = nameOverride ? `<span style="color:var(--text2);margin-right:4px">${nameOverride}:</span>` : '';
+  return `<div class="log-entry">
+    <span class="log-pts ${pos?'pos':'neg'}">${pos?'+':''}${entry.pts}</span>
+    <span class="log-reason">${name}${entry.reason || '—'}</span>
+    <span class="log-date">${fmtDateTime(entry.date)}</span>
+  </div>`;
+}
+
+// ── POINTS ──
+function addPoints(sign) {
+  const emp = getEmp(currentEmpId);
+  if (!emp) return;
+  const amount = parseInt(document.getElementById('pts-amount').value) || 1;
+  const reason = document.getElementById('pts-reason').value.trim() || (sign>0 ? 'Aktivita' : 'Penalizace');
+  const pts = sign * Math.abs(amount);
+  emp.points = (emp.points||0) + pts;
+
+  const entry = { pts, reason, date: new Date().toISOString(), ts: Date.now() };
+  emp.log = emp.log || [];
+  emp.log.push(entry);
+
+  const globalEntry = { ...entry, empId: emp.id };
+  globalLog.push(globalEntry);
+  if (globalLog.length > 200) globalLog = globalLog.slice(-200);
+
+  save();
+  document.getElementById('pts-reason').value = '';
+  renderDetail();
+  showToast((sign>0?'+':'')+pts+' bodů — '+reason);
+}
+
+// ── NOTES ──
+let notesTimer;
+function saveNotes() {
+  clearTimeout(notesTimer);
+  notesTimer = setTimeout(() => {
+    const emp = getEmp(currentEmpId);
+    if (!emp) return;
+    emp.notes = document.getElementById('notes-area').value;
+    save();
+  }, 500);
+}
+
+// ── ADD/EDIT MODAL ──
+document.getElementById('f-rank').addEventListener('change', function() {
+  document.getElementById('f-rank-custom-wrap').style.display = this.value === 'custom' ? 'block' : 'none';
+});
+
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'Nový zaměstnanec';
+  ['f-fname','f-lname','f-position','f-dept','f-tag','f-contact','f-bio'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-rank').value = '';
+  document.getElementById('f-rank-custom').value = '';
+  document.getElementById('f-rank-custom-wrap').style.display = 'none';
+  document.getElementById('f-status').value = 'Aktivní';
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('emp-modal').style.display = 'flex';
+}
+
+function openEditModal() {
+  const emp = getEmp(currentEmpId);
+  if (!emp) return;
+  editingId = emp.id;
+  document.getElementById('modal-title').textContent = 'Upravit zaměstnance';
+  document.getElementById('f-fname').value = emp.fname||'';
+  document.getElementById('f-lname').value = emp.lname||'';
+  document.getElementById('f-position').value = emp.position||'';
+  document.getElementById('f-dept').value = emp.dept||'';
+  document.getElementById('f-tag').value = emp.tag||'';
+  document.getElementById('f-contact').value = emp.contact||'';
+  document.getElementById('f-bio').value = emp.bio||'';
+  document.getElementById('f-status').value = emp.status||'Aktivní';
+  document.getElementById('f-date').value = emp.date||'';
+
+  const knownRanks = RANKS;
+  if (emp.rank && knownRanks.includes(emp.rank)) {
+    document.getElementById('f-rank').value = emp.rank;
+    document.getElementById('f-rank-custom-wrap').style.display = 'none';
+  } else if (emp.rank) {
+    document.getElementById('f-rank').value = 'custom';
+    document.getElementById('f-rank-custom').value = emp.rank;
+    document.getElementById('f-rank-custom-wrap').style.display = 'block';
+  } else {
+    document.getElementById('f-rank').value = '';
+    document.getElementById('f-rank-custom-wrap').style.display = 'none';
+  }
+
+  document.getElementById('emp-modal').style.display = 'flex';
+}
+
+function closeEmpModal() {
+  document.getElementById('emp-modal').style.display = 'none';
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('emp-modal')) closeEmpModal();
+}
+
+function saveEmployee() {
+  const fname = document.getElementById('f-fname').value.trim();
+  const lname = document.getElementById('f-lname').value.trim();
+  if (!fname || !lname) { showToast('Vyplňte jméno a příjmení'); return; }
+
+  const rankSel = document.getElementById('f-rank').value;
+  const rank = rankSel === 'custom' ? document.getElementById('f-rank-custom').value.trim() : rankSel;
+
+  const data = {
+    fname, lname, rank,
+    position: document.getElementById('f-position').value.trim(),
+    dept: document.getElementById('f-dept').value.trim(),
+    tag: document.getElementById('f-tag').value.trim(),
+    contact: document.getElementById('f-contact').value.trim(),
+    bio: document.getElementById('f-bio').value.trim(),
+    status: document.getElementById('f-status').value,
+    date: document.getElementById('f-date').value,
+  };
+
+  if (editingId) {
+    const idx = employees.findIndex(e => e.id === editingId);
+    if (idx >= 0) employees[idx] = { ...employees[idx], ...data };
+    showToast('Uloženo');
+  } else {
+    employees.push({ id: uid(), points: 0, log: [], notes: '', ...data });
+    showToast('Zaměstnanec přidán');
+  }
+
+  save();
+  closeEmpModal();
+  renderSidebar();
+  renderTable();
+  if (editingId && currentEmpId === editingId) renderDetail();
+}
+
+// ── DELETE ──
+function confirmDelete() {
+  const emp = getEmp(currentEmpId);
+  if (!emp) return;
+  if (confirm(`Opravdu smazat zaměstnance ${emp.fname} ${emp.lname}? Tato akce je nevratná.`)) {
+    employees = employees.filter(e => e.id !== currentEmpId);
+    currentEmpId = null;
+    save();
+    renderSidebar();
+    showPage('employees');
+    showToast('Zaměstnanec smazán');
+  }
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
+// ── INIT ──
+renderSidebar();
+renderOverview();
+</script>
+</body>
+</html>
